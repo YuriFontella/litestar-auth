@@ -2,7 +2,6 @@ from litestar.di import Provide
 from litestar.exceptions import HTTPException
 from litestar.plugins import InitPluginProtocol
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
-from msgspec import ValidationError
 
 from src.lib.exceptions import app_exception_handler, internal_server_error_handler
 from src.lib.deps import provide_current_user

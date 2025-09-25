@@ -1,5 +1,3 @@
-import msgspec
-
 from litestar import Controller, Request, post
 from litestar.di import Provide
 from litestar.channels import ChannelsPlugin
