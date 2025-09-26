@@ -31,9 +31,10 @@ Configure pre-commit hooks:
 pre-commit install --config pre-commit.yaml
 ```
 
-Activate the virtual shell
+Install the shell plugin and activate the virtual shell:
 
 ```bash
+poetry self add poetry-plugin-shell
 poetry shell
 ```
 
