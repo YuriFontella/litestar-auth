@@ -74,6 +74,13 @@ http://localhost:PORT/schema/redoc
 
 Replace `PORT` with the port used (default 8000 if not specified).
 
+Extra plugin for Poetry
+
+```bash
+poetry self add poetry-plugin-up
+poetry up --latest
+```
+
 ---
 
 **More features:** [litestar-asyncpg](https://github.com/YuriFontella/litestar-asyncpg)
