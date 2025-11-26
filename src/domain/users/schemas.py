@@ -64,3 +64,11 @@ class UserLogin(Struct):
 
 class Token(Struct):
     token: str
+
+
+class PaginatedUsersResponse(Struct):
+    data: list[UserRead]
+    total: int
+    limit: int
+    offset: int
+

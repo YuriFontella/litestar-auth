@@ -28,6 +28,13 @@ class UsersService:
     async def email_exists(self, email: str) -> bool:
         return await self.user_repository.email_exists(email)
 
+    async def get_users(self, limit: Optional[int] = None, offset: int = 0) -> list[dict]:
+        users = await self.user_repository.get_users(limit=limit, offset=offset)
+        return users
+
+    async def count_users(self) -> int:
+        return await self.user_repository.count_users()
+
     async def create(self, data: UserCreate) -> dict:
         hashed_password = bcrypt.hashpw(
             data.password.encode("utf-8"), bcrypt.gensalt(self.settings.app.BCRYPT_GENSALT)

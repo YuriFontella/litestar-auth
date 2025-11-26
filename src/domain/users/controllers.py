@@ -1,9 +1,10 @@
-from litestar import Controller, Request, post
+from litestar import Controller, Request, post, get
 from litestar.di import Provide
 from litestar.channels import ChannelsPlugin
 from litestar.exceptions import HTTPException
+from litestar.params import Parameter
 
-from src.domain.users.schemas import Token, UserCreate, UserLogin, UserRead
+from src.domain.users.schemas import Token, UserCreate, UserLogin, UserRead, PaginatedUsersResponse
 from src.domain.users.deps import provide_users_service
 from src.domain.users.services import UsersService
 
@@ -47,3 +48,20 @@ class UserController(Controller):
             return await users_service.authenticate(data, user_agent=user_agent, ip=ip)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+
+    @get(path="/", cache=2)
+    async def get_users(
+        self,
+        users_service: UsersService,
+        limit: int = Parameter(default=50, ge=1, le=100, description="Number of users per page"),
+        offset: int = Parameter(default=0, ge=0, description="Number of users to skip"),
+    ) -> PaginatedUsersResponse:
+        users = await users_service.get_users(limit=limit, offset=offset)
+        total = await users_service.count_users()
+
+        return PaginatedUsersResponse(
+            data=[UserRead(**user) for user in users],
+            total=total,
+            limit=limit,
+            offset=offset,
+        )

@@ -16,3 +16,5 @@ ALTER TABLE users ADD CONSTRAINT uq_users_email UNIQUE (email);
 ALTER TABLE users ADD CONSTRAINT uq_users_fingerprint UNIQUE (fingerprint);
 
 CREATE INDEX IF NOT EXISTS users_index_email ON users (email ASC);
+CREATE INDEX IF NOT EXISTS users_index_date ON users (date DESC);
+CREATE INDEX IF NOT EXISTS users_index_status_date ON users (status, date DESC);

@@ -30,3 +30,18 @@ class UserRepository:
     async def email_exists(self, email: str) -> bool:
         query = "SELECT 1 FROM users WHERE email = $1"
         return bool(await self.connection.fetchrow(query, email))
+
+    async def get_users(self, limit: Optional[int] = None, offset: int = 0) -> Optional[list]:
+        query = "SELECT uuid, name, email, status FROM users ORDER BY date DESC"
+
+        if limit is not None:
+            query += " LIMIT $1 OFFSET $2"
+            return await self.connection.fetch(query, limit, offset)
+        else:
+            query += " OFFSET $1"
+            return await self.connection.fetch(query, offset)
+
+    async def count_users(self) -> int:
+        query = "SELECT COUNT(*) as total FROM users"
+        result = await self.connection.fetchrow(query)
+        return result["total"] if result else 0
