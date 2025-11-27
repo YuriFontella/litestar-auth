@@ -63,7 +63,8 @@ class UserLogin(Struct):
 
 
 class Token(Struct):
-    token: str
+    access_token: str
+    refresh_token: str
 
 
 class PaginatedUsersResponse(Struct):

@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 ALTER TABLE sessions ADD CONSTRAINT uq_sessions_access_token UNIQUE (access_token);
+
+CREATE INDEX idx_sessions_user_token ON sessions (user_uuid, access_token)
+WHERE revoked = false;
