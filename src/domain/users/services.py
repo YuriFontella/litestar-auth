@@ -63,15 +63,21 @@ class UsersService:
             raise ValueError("The password is incorrect")
 
         salt = self.settings.app.SESSION_SALT
-        random_token = secrets.token_hex()
+        random_access_token = secrets.token_hex()
+        random_refresh_token = secrets.token_hex()
         user_uuid = user_record["uuid"]
 
         access_token_hash = hashlib.pbkdf2_hmac(
-            self.settings.app.PBKDF2_ALGORITHM, random_token.encode(), salt.encode(), self.settings.app.PBKDF2_ITERATIONS
+            self.settings.app.PBKDF2_ALGORITHM, random_access_token.encode(), salt.encode(), self.settings.app.PBKDF2_ITERATIONS
+        )
+
+        refresh_token_hash = hashlib.pbkdf2_hmac(
+            self.settings.app.PBKDF2_ALGORITHM, random_refresh_token.encode(), salt.encode(), self.settings.app.PBKDF2_ITERATIONS
         )
 
         session = await self.session_repository.create(
             access_token=access_token_hash.hex(),
+            refresh_token=refresh_token_hash.hex(),
             user_agent=user_agent,
             ip=ip,
             user_uuid=user_uuid,
@@ -80,10 +86,78 @@ class UsersService:
         if not session:
             raise ValueError("Something went wrong creating the session")
 
-        token = jwt.encode(
-            {"uuid": str(user_uuid), "access_token": random_token},
+        access_token_jwt = jwt.encode(
+            {"uuid": str(user_uuid), "access_token": random_access_token},
             key=self.settings.app.SECRET_KEY,
             algorithm=self.settings.app.JWT_ALGORITHM,
         )
 
-        return Token(token=token)
+        refresh_token_jwt = jwt.encode(
+            {"uuid": str(user_uuid), "refresh_token": random_refresh_token},
+            key=self.settings.app.SECRET_KEY,
+            algorithm=self.settings.app.JWT_ALGORITHM,
+        )
+
+        return Token(access_token=access_token_jwt, refresh_token=refresh_token_jwt)
+
+    async def refresh_access_token(
+        self, refresh_token: str, user_agent: Optional[str], ip: Optional[str]
+    ) -> Token:
+        """Refreshes the access_token using a valid refresh_token"""
+        try:
+            # Decode the refresh token JWT
+            decoded = jwt.decode(
+                jwt=refresh_token,
+                key=self.settings.app.SECRET_KEY,
+                algorithms=[self.settings.app.JWT_ALGORITHM],
+            )
+
+            random_refresh_token = decoded.get("refresh_token")
+            user_uuid = decoded.get("uuid")
+
+            if not random_refresh_token or not user_uuid:
+                raise ValueError("Invalid refresh token")
+
+            # Generate the refresh token hash to search in the database
+            salt = self.settings.app.SESSION_SALT
+            refresh_token_hash = hashlib.pbkdf2_hmac(
+                self.settings.app.PBKDF2_ALGORITHM,
+                random_refresh_token.encode(),
+                salt.encode(),
+                self.settings.app.PBKDF2_ITERATIONS
+            )
+
+            # Fetch the session by refresh token
+            session = await self.session_repository.get_by_refresh_token(refresh_token_hash.hex())
+
+            if not session or str(session["user_uuid"]) != user_uuid:
+                raise ValueError("Invalid or expired refresh token")
+
+            # Generate a new access token
+            random_access_token = secrets.token_hex()
+
+            access_token_hash = hashlib.pbkdf2_hmac(
+                self.settings.app.PBKDF2_ALGORITHM,
+                random_access_token.encode(),
+                salt.encode(),
+                self.settings.app.PBKDF2_ITERATIONS
+            )
+
+            # Update only the access token in the existing session
+            await self.session_repository.update_access_token(
+                session_uuid=session["uuid"],
+                access_token=access_token_hash.hex()
+            )
+
+            # Generate new access token JWT
+            access_token_jwt = jwt.encode(
+                {"uuid": user_uuid, "access_token": random_access_token},
+                key=self.settings.app.SECRET_KEY,
+                algorithm=self.settings.app.JWT_ALGORITHM,
+            )
+
+            # Return the new access token and keep the same refresh token
+            return Token(access_token=access_token_jwt, refresh_token=refresh_token)
+
+        except jwt.PyJWTError:
+            raise ValueError("Invalid refresh token format")

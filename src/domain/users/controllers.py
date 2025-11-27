@@ -4,6 +4,8 @@ from litestar.channels import ChannelsPlugin
 from litestar.exceptions import HTTPException
 from litestar.params import Parameter
 
+from src.server.auth import AuthenticationMiddleware
+
 from src.domain.users.schemas import Token, UserCreate, UserLogin, UserRead, PaginatedUsersResponse
 from src.domain.users.deps import provide_users_service
 from src.domain.users.services import UsersService
@@ -65,3 +67,24 @@ class UserController(Controller):
             limit=limit,
             offset=offset,
         )
+
+    @post(path="/refresh", middleware=[AuthenticationMiddleware])
+    async def refresh_token(
+        self, request: Request, users_service: UsersService
+    ) -> Token:
+        """Renova o access_token usando um refresh_token válido"""
+        try:
+            refresh_token = request.headers.get("x-refresh-token")
+            if not refresh_token:
+                raise HTTPException(status_code=400, detail="Refresh token is required")
+
+            user_agent = request.headers.get("user-agent")
+            ip = request.headers.get("x-real-ip") or request.headers.get("x-forwarded-for")
+
+            return await users_service.refresh_access_token(
+                refresh_token=refresh_token,
+                user_agent=user_agent,
+                ip=ip
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=401, detail=str(e))
