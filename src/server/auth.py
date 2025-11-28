@@ -1,6 +1,6 @@
 import hashlib
 
-from jwt import PyJWTError, decode
+from jwt import PyJWTError, ExpiredSignatureError, decode
 
 from litestar.connection import ASGIConnection
 from litestar.exceptions import NotAuthorizedException
@@ -44,8 +44,10 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
             if not user:
                 raise NotAuthorizedException()
 
+        except ExpiredSignatureError:
+            raise NotAuthorizedException(detail="Token expired")
         except PyJWTError:
-            raise NotAuthorizedException()
+            raise NotAuthorizedException(detail="Invalid token")
 
         else:
             return AuthenticationResult(user=user, auth=auth)

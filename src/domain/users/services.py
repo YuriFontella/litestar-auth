@@ -3,6 +3,8 @@ import secrets
 import bcrypt
 import jwt
 
+from datetime import datetime, timezone, timedelta
+
 from dataclasses import dataclass, field
 from typing import Optional
 from asyncpg import Connection
@@ -86,14 +88,26 @@ class UsersService:
         if not session:
             raise ValueError("Something went wrong creating the session")
 
+        # Calculate expiration times
+        access_token_exp = datetime.now(timezone.utc) + timedelta(minutes=self.settings.app.ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_token_exp = datetime.now(timezone.utc) + timedelta(days=self.settings.app.REFRESH_TOKEN_EXPIRE_DAYS)
+
         access_token_jwt = jwt.encode(
-            {"uuid": str(user_uuid), "access_token": random_access_token},
+            {
+                "uuid": str(user_uuid),
+                "access_token": random_access_token,
+                "exp": access_token_exp
+            },
             key=self.settings.app.SECRET_KEY,
             algorithm=self.settings.app.JWT_ALGORITHM,
         )
 
         refresh_token_jwt = jwt.encode(
-            {"uuid": str(user_uuid), "refresh_token": random_refresh_token},
+            {
+                "uuid": str(user_uuid),
+                "refresh_token": random_refresh_token,
+                "exp": refresh_token_exp
+            },
             key=self.settings.app.SECRET_KEY,
             algorithm=self.settings.app.JWT_ALGORITHM,
         )
@@ -105,7 +119,6 @@ class UsersService:
     ) -> Token:
         """Refreshes the access_token using a valid refresh_token"""
         try:
-            # Decode the refresh token JWT
             decoded = jwt.decode(
                 jwt=refresh_token,
                 key=self.settings.app.SECRET_KEY,
@@ -146,12 +159,21 @@ class UsersService:
             # Update only the access token in the existing session
             await self.session_repository.update_access_token(
                 session_uuid=session["uuid"],
-                access_token=access_token_hash.hex()
+                access_token=access_token_hash.hex(),
+                user_agent=user_agent,
+                ip=ip
             )
+
+            # Calculate expiration time for new access token
+            access_token_exp = datetime.now(timezone.utc) + timedelta(minutes=self.settings.app.ACCESS_TOKEN_EXPIRE_MINUTES)
 
             # Generate new access token JWT
             access_token_jwt = jwt.encode(
-                {"uuid": user_uuid, "access_token": random_access_token},
+                {
+                    "uuid": user_uuid,
+                    "access_token": random_access_token,
+                    "exp": access_token_exp
+                },
                 key=self.settings.app.SECRET_KEY,
                 algorithm=self.settings.app.JWT_ALGORITHM,
             )
@@ -159,5 +181,7 @@ class UsersService:
             # Return the new access token and keep the same refresh token
             return Token(access_token=access_token_jwt, refresh_token=refresh_token)
 
+        except jwt.ExpiredSignatureError:
+            raise ValueError("Refresh token expired")
         except jwt.PyJWTError:
             raise ValueError("Invalid refresh token format")

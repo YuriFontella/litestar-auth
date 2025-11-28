@@ -38,6 +38,8 @@ class AppSettings:
     PBKDF2_ALGORITHM: str = "sha256"
     MAX_FINGERPRINT_VALUE: int = 100_000_000
     BCRYPT_GENSALT: int = 12
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 days
 
     def __post_init__(self):
         self.SECRET_KEY = self.SECRET_KEY or os.getenv("SECRET_KEY")
@@ -46,6 +48,8 @@ class AppSettings:
         self.PBKDF2_ALGORITHM = os.getenv("PBKDF2_ALGORITHM", self.PBKDF2_ALGORITHM)
         self.MAX_FINGERPRINT_VALUE = int(os.getenv("MAX_FINGERPRINT_VALUE", self.MAX_FINGERPRINT_VALUE))
         self.BCRYPT_GENSALT = int(os.getenv("BCRYPT_GENSALT", self.BCRYPT_GENSALT))
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", self.ACCESS_TOKEN_EXPIRE_MINUTES))
+        self.REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", self.REFRESH_TOKEN_EXPIRE_DAYS))
 
         if not self.ALLOWED_CORS_ORIGINS:
             cors_origins = os.getenv("ALLOWED_CORS_ORIGINS")
