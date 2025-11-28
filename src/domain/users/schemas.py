@@ -72,4 +72,3 @@ class PaginatedUsersResponse(Struct):
     total: int
     limit: int
     offset: int
-

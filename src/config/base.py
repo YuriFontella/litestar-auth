@@ -44,12 +44,20 @@ class AppSettings:
     def __post_init__(self):
         self.SECRET_KEY = self.SECRET_KEY or os.getenv("SECRET_KEY")
         self.SESSION_SALT = self.SESSION_SALT or os.getenv("SESSION_SALT")
-        self.PBKDF2_ITERATIONS = int(os.getenv("PBKDF2_ITERATIONS", self.PBKDF2_ITERATIONS))
+        self.PBKDF2_ITERATIONS = int(
+            os.getenv("PBKDF2_ITERATIONS", self.PBKDF2_ITERATIONS)
+        )
         self.PBKDF2_ALGORITHM = os.getenv("PBKDF2_ALGORITHM", self.PBKDF2_ALGORITHM)
-        self.MAX_FINGERPRINT_VALUE = int(os.getenv("MAX_FINGERPRINT_VALUE", self.MAX_FINGERPRINT_VALUE))
+        self.MAX_FINGERPRINT_VALUE = int(
+            os.getenv("MAX_FINGERPRINT_VALUE", self.MAX_FINGERPRINT_VALUE)
+        )
         self.BCRYPT_GENSALT = int(os.getenv("BCRYPT_GENSALT", self.BCRYPT_GENSALT))
-        self.ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", self.ACCESS_TOKEN_EXPIRE_MINUTES))
-        self.REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", self.REFRESH_TOKEN_EXPIRE_DAYS))
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = int(
+            os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", self.ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
+        self.REFRESH_TOKEN_EXPIRE_DAYS = int(
+            os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", self.REFRESH_TOKEN_EXPIRE_DAYS)
+        )
 
         if not self.ALLOWED_CORS_ORIGINS:
             cors_origins = os.getenv("ALLOWED_CORS_ORIGINS")

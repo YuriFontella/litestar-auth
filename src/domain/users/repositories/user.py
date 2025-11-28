@@ -31,7 +31,9 @@ class UserRepository:
         query = "SELECT 1 FROM users WHERE email = $1"
         return bool(await self.connection.fetchrow(query, email))
 
-    async def get_users(self, limit: Optional[int] = None, offset: int = 0) -> Optional[list]:
+    async def get_users(
+        self, limit: Optional[int] = None, offset: int = 0
+    ) -> Optional[list]:
         query = "SELECT uuid, name, email, status FROM users ORDER BY date DESC"
 
         if limit is not None:

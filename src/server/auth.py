@@ -28,7 +28,10 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
             )
             salt = settings.app.SESSION_SALT
             access_token = hashlib.pbkdf2_hmac(
-                settings.app.PBKDF2_ALGORITHM, auth["access_token"].encode(), salt.encode(), settings.app.PBKDF2_ITERATIONS
+                settings.app.PBKDF2_ALGORITHM,
+                auth["access_token"].encode(),
+                salt.encode(),
+                settings.app.PBKDF2_ITERATIONS,
             )
             user_uuid = auth.get("uuid")
 

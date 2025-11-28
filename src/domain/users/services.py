@@ -30,7 +30,9 @@ class UsersService:
     async def email_exists(self, email: str) -> bool:
         return await self.user_repository.email_exists(email)
 
-    async def get_users(self, limit: Optional[int] = None, offset: int = 0) -> list[dict]:
+    async def get_users(
+        self, limit: Optional[int] = None, offset: int = 0
+    ) -> list[dict]:
         users = await self.user_repository.get_users(limit=limit, offset=offset)
         return users
 
@@ -39,7 +41,8 @@ class UsersService:
 
     async def create(self, data: UserCreate) -> dict:
         hashed_password = bcrypt.hashpw(
-            data.password.encode("utf-8"), bcrypt.gensalt(self.settings.app.BCRYPT_GENSALT)
+            data.password.encode("utf-8"),
+            bcrypt.gensalt(self.settings.app.BCRYPT_GENSALT),
         )
 
         fingerprint = secrets.randbelow(self.settings.app.MAX_FINGERPRINT_VALUE)
@@ -70,11 +73,17 @@ class UsersService:
         user_uuid = user_record["uuid"]
 
         access_token_hash = hashlib.pbkdf2_hmac(
-            self.settings.app.PBKDF2_ALGORITHM, random_access_token.encode(), salt.encode(), self.settings.app.PBKDF2_ITERATIONS
+            self.settings.app.PBKDF2_ALGORITHM,
+            random_access_token.encode(),
+            salt.encode(),
+            self.settings.app.PBKDF2_ITERATIONS,
         )
 
         refresh_token_hash = hashlib.pbkdf2_hmac(
-            self.settings.app.PBKDF2_ALGORITHM, random_refresh_token.encode(), salt.encode(), self.settings.app.PBKDF2_ITERATIONS
+            self.settings.app.PBKDF2_ALGORITHM,
+            random_refresh_token.encode(),
+            salt.encode(),
+            self.settings.app.PBKDF2_ITERATIONS,
         )
 
         session = await self.session_repository.create(
@@ -89,14 +98,18 @@ class UsersService:
             raise ValueError("Something went wrong creating the session")
 
         # Calculate expiration times
-        access_token_exp = datetime.now(timezone.utc) + timedelta(minutes=self.settings.app.ACCESS_TOKEN_EXPIRE_MINUTES)
-        refresh_token_exp = datetime.now(timezone.utc) + timedelta(days=self.settings.app.REFRESH_TOKEN_EXPIRE_DAYS)
+        access_token_exp = datetime.now(timezone.utc) + timedelta(
+            minutes=self.settings.app.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        refresh_token_exp = datetime.now(timezone.utc) + timedelta(
+            days=self.settings.app.REFRESH_TOKEN_EXPIRE_DAYS
+        )
 
         access_token_jwt = jwt.encode(
             {
                 "uuid": str(user_uuid),
                 "access_token": random_access_token,
-                "exp": access_token_exp
+                "exp": access_token_exp,
             },
             key=self.settings.app.SECRET_KEY,
             algorithm=self.settings.app.JWT_ALGORITHM,
@@ -106,7 +119,7 @@ class UsersService:
             {
                 "uuid": str(user_uuid),
                 "refresh_token": random_refresh_token,
-                "exp": refresh_token_exp
+                "exp": refresh_token_exp,
             },
             key=self.settings.app.SECRET_KEY,
             algorithm=self.settings.app.JWT_ALGORITHM,
@@ -137,11 +150,13 @@ class UsersService:
                 self.settings.app.PBKDF2_ALGORITHM,
                 random_refresh_token.encode(),
                 salt.encode(),
-                self.settings.app.PBKDF2_ITERATIONS
+                self.settings.app.PBKDF2_ITERATIONS,
             )
 
             # Fetch the session by refresh token
-            session = await self.session_repository.get_by_refresh_token(refresh_token_hash.hex())
+            session = await self.session_repository.get_by_refresh_token(
+                refresh_token_hash.hex()
+            )
 
             if not session or str(session["user_uuid"]) != user_uuid:
                 raise ValueError("Invalid or expired refresh token")
@@ -153,7 +168,7 @@ class UsersService:
                 self.settings.app.PBKDF2_ALGORITHM,
                 random_access_token.encode(),
                 salt.encode(),
-                self.settings.app.PBKDF2_ITERATIONS
+                self.settings.app.PBKDF2_ITERATIONS,
             )
 
             # Update only the access token in the existing session
@@ -161,18 +176,20 @@ class UsersService:
                 session_uuid=session["uuid"],
                 access_token=access_token_hash.hex(),
                 user_agent=user_agent,
-                ip=ip
+                ip=ip,
             )
 
             # Calculate expiration time for new access token
-            access_token_exp = datetime.now(timezone.utc) + timedelta(minutes=self.settings.app.ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token_exp = datetime.now(timezone.utc) + timedelta(
+                minutes=self.settings.app.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
 
             # Generate new access token JWT
             access_token_jwt = jwt.encode(
                 {
                     "uuid": user_uuid,
                     "access_token": random_access_token,
-                    "exp": access_token_exp
+                    "exp": access_token_exp,
                 },
                 key=self.settings.app.SECRET_KEY,
                 algorithm=self.settings.app.JWT_ALGORITHM,
