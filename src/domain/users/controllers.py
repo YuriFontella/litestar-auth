@@ -1,3 +1,5 @@
+from typing import Dict
+
 from litestar import Controller, Request, post, get
 from litestar.di import Provide
 from litestar.channels import ChannelsPlugin
@@ -8,6 +10,7 @@ from src.server.auth import AuthenticationMiddleware
 
 from src.domain.users.schemas import (
     Token,
+    User,
     UserCreate,
     UserLogin,
     UserRead,
@@ -95,3 +98,13 @@ class UserController(Controller):
             )
         except ValueError as e:
             raise HTTPException(status_code=401, detail=str(e))
+
+    @get(path="/data", middleware=[AuthenticationMiddleware])
+    async def users_data(self, current_user: Dict) -> User:
+        return User(
+            uuid=current_user["uuid"],
+            name=current_user["name"],
+            email=current_user["email"],
+            role=current_user["role"],
+            status=current_user["status"],
+        )

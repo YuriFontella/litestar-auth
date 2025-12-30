@@ -45,7 +45,7 @@ class User(Struct, kw_only=True, omit_defaults=True):
     uuid: Optional[UUID] = None
     name: str
     email: str
-    password: str
+    password: Optional[int] = None
     fingerprint: Optional[int] = None
     role: Optional[UserRole] = None
     status: Optional[bool] = None
