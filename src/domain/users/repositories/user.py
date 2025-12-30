@@ -34,7 +34,7 @@ class UserRepository:
     async def get_users(
         self, limit: Optional[int] = None, offset: int = 0
     ) -> Optional[list]:
-        query = "SELECT uuid, name, email, status FROM users ORDER BY date DESC"
+        query = "SELECT uuid, name, email, status FROM users ORDER BY created_at DESC"
 
         if limit is not None:
             query += " LIMIT $1 OFFSET $2"

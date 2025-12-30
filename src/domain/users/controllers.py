@@ -80,7 +80,6 @@ class UserController(Controller):
     async def refresh_token(
         self, request: Request, users_service: UsersService
     ) -> Token:
-        """Renova o access_token usando um refresh_token válido"""
         try:
             refresh_token = request.headers.get("x-refresh-token")
             if not refresh_token:

@@ -51,7 +51,7 @@ class SessionRepository:
         """Atualiza o access_token, user_agent e ip de uma sessão existente"""
         query = """
             UPDATE sessions
-            SET access_token = $1, user_agent = $2, ip = $3, update = NOW()
+            SET access_token = $1, user_agent = $2, ip = $3, updated_at = NOW()
             WHERE uuid = $4 AND revoked = false
         """
         await self.connection.execute(query, access_token, user_agent, ip, session_uuid)

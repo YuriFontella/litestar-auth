@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     revoked bool DEFAULT false,
     user_uuid uuid NOT NULL REFERENCES users (uuid) ON DELETE CASCADE,
     type varchar NOT NULL DEFAULT 'manual',
-    create timestamp with time zone DEFAULT current_timestamp,
-    update timestamp with time zone DEFAULT current_timestamp
+    created_at timestamp with time zone DEFAULT current_timestamp,
+    updated_at timestamp with time zone DEFAULT current_timestamp
 );
 
 ALTER TABLE sessions ADD CONSTRAINT uq_sessions_access_token UNIQUE (access_token);
