@@ -14,6 +14,8 @@ csrf = CSRFConfig(
     secret=settings.app.SECRET_KEY,
     cookie_name=settings.app.CSRF_COOKIE_NAME,
     cookie_secure=settings.app.CSRF_COOKIE_SECURE,
+    cookie_samesite=settings.app.CSRF_COOKIE_SAMESITE,
+    cookie_httponly=settings.app.CSRF_COOKIE_HTTPONLY,
     safe_methods={
         "POST",
         "GET",

@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -32,6 +32,8 @@ class AppSettings:
     ALLOWED_CORS_ORIGINS: List[str] = field(default_factory=list)
     CSRF_COOKIE_NAME: str = "XSRF-TOKEN"
     CSRF_COOKIE_SECURE: bool = False
+    CSRF_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "strict"
+    CSRF_COOKIE_HTTPONLY: bool = True
     JWT_ALGORITHM: str = "HS256"
     SESSION_SALT: Optional[str] = None
     PBKDF2_ITERATIONS: int = 600_000
@@ -73,6 +75,12 @@ class AppSettings:
             "true",
             "1",
             "yes",
+        )
+        self.CSRF_COOKIE_SAMESITE = os.getenv(
+            "CSRF_COOKIE_SAMESITE", self.CSRF_COOKIE_SAMESITE
+        )
+        self.CSRF_COOKIE_HTTPONLY = os.getenv(
+            "CSRF_COOKIE_HTTPONLY", self.CSRF_COOKIE_HTTPONLY
         )
         self.JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", self.JWT_ALGORITHM)
 
