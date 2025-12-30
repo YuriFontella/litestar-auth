@@ -86,6 +86,9 @@ class UsersService:
             self.settings.app.PBKDF2_ITERATIONS,
         )
 
+        # Revoke all active sessions for this user before creating a new one
+        await self.session_repository.revoke_user_sessions(user_uuid)
+
         session = await self.session_repository.create(
             access_token=access_token_hash.hex(),
             refresh_token=refresh_token_hash.hex(),
@@ -202,3 +205,25 @@ class UsersService:
             raise ValueError("Refresh token expired")
         except jwt.PyJWTError:
             raise ValueError("Invalid refresh token format")
+
+    async def revoke_current_session(self, user_uuid: str, access_token: str) -> bool:
+        """Revokes the current session by user_uuid and access_token"""
+        # Hash the access token to match the stored hash
+        salt = self.settings.app.SESSION_SALT
+        access_token_hash = hashlib.pbkdf2_hmac(
+            self.settings.app.PBKDF2_ALGORITHM,
+            access_token.encode(),
+            salt.encode(),
+            self.settings.app.PBKDF2_ITERATIONS,
+        )
+
+        # Get the session by user_uuid and access_token
+        session = await self.session_repository.get_by_user_and_access_token(
+            user_uuid=user_uuid, access_token=access_token_hash.hex()
+        )
+
+        if not session:
+            raise ValueError("Session not found")
+
+        # Revoke the session
+        return await self.session_repository.revoke_session(session["uuid"])

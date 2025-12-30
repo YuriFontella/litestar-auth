@@ -34,11 +34,30 @@ class SessionRepository:
         """
         return await self.connection.fetchrow(query, refresh_token)
 
+    async def get_by_user_and_access_token(
+        self, user_uuid: str, access_token: str
+    ) -> Optional[dict]:
+        query = """
+            SELECT uuid, user_uuid, access_token, refresh_token, revoked
+            FROM sessions
+            WHERE user_uuid = $1 AND access_token = $2 AND revoked = false
+        """
+        return await self.connection.fetchrow(query, user_uuid, access_token)
+
     async def revoke_session(self, session_uuid: UUID) -> bool:
         query = """
             UPDATE sessions SET revoked = true WHERE uuid = $1
         """
         await self.connection.execute(query, str(session_uuid))
+        return True
+
+    async def revoke_user_sessions(self, user_uuid: UUID) -> bool:
+        """Revoga todas as sessões ativas de um usuário"""
+        query = """
+            UPDATE sessions SET revoked = true 
+            WHERE user_uuid = $1 AND revoked = false
+        """
+        await self.connection.execute(query, str(user_uuid))
         return True
 
     async def update_access_token(

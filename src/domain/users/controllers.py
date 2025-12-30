@@ -1,10 +1,11 @@
 from typing import Dict
 
-from litestar import Controller, Request, post, get
+from litestar import Controller, Request, Response, post, get
 from litestar.di import Provide
 from litestar.channels import ChannelsPlugin
 from litestar.exceptions import HTTPException
 from litestar.params import Parameter
+from litestar.datastructures import Cookie
 
 from src.server.auth import AuthenticationMiddleware
 
@@ -108,3 +109,42 @@ class UserController(Controller):
             role=current_user["role"],
             status=current_user["status"],
         )
+
+    @post(path="/logout", middleware=[AuthenticationMiddleware])
+    async def logout(
+        self, request: Request, current_user: Dict, users_service: UsersService
+    ) -> Response[bool]:
+        auth = request.auth
+        access_token = auth.get("access_token") if auth else None
+
+        if access_token and current_user.get("uuid"):
+            await users_service.revoke_current_session(
+                user_uuid=str(current_user["uuid"]), access_token=access_token
+            )
+
+        response = Response(
+            content=True,
+            cookies=[
+                Cookie(
+                    key="x-access-token",
+                    value=None,
+                    httponly=True,
+                    secure=False,
+                    samesite="strict",
+                    max_age=0,
+                    expires=0,
+                    path="/",
+                ),
+                Cookie(
+                    key="x-refresh-token",
+                    value=None,
+                    httponly=True,
+                    secure=False,
+                    samesite="strict",
+                    max_age=0,
+                    expires=0,
+                    path="/",
+                ),
+            ],
+        )
+        return response

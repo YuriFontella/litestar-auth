@@ -41,6 +41,8 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
                     select u.uuid, u.name, u.email, u.role, u.status from users u
                     join sessions s on u.uuid = s.user_uuid
                     where u.uuid = $1 and s.access_token = $2 and s.revoked = false and u.status = true
+                    order by s.created_at desc
+                    limit 1
                 """
                 user = await conn.fetchrow(query, user_uuid, access_token.hex())
 
