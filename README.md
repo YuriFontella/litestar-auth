@@ -25,17 +25,17 @@ cp .env.example .env
 poetry install
 ```
 
-Configure pre-commit hooks:
-
-```bash
-pre-commit install --config pre-commit.yaml
-```
-
 Install the shell plugin and activate the virtual shell:
 
 ```bash
 poetry self add poetry-plugin-shell
 poetry shell
+```
+
+Configure pre-commit hooks:
+
+```bash
+pre-commit install --config pre-commit.yaml
 ```
 
 ### 4. Database
