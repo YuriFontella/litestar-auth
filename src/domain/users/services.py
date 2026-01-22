@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import secrets
 import bcrypt
 import jwt
@@ -26,6 +27,11 @@ class UsersService:
         self.user_repository = UserRepository(self.connection)
         self.session_repository = SessionRepository(self.connection)
         self.settings = get_settings()
+
+    @staticmethod
+    def _hash_token(token: str, salt: str) -> str:
+        """Hash token using HMAC-SHA256 - fast and secure for random tokens."""
+        return hmac.new(salt.encode(), token.encode(), hashlib.sha256).hexdigest()
 
     async def email_exists(self, email: str) -> bool:
         return await self.user_repository.email_exists(email)
@@ -72,26 +78,15 @@ class UsersService:
         random_refresh_token = secrets.token_hex()
         user_uuid = user_record["uuid"]
 
-        access_token_hash = hashlib.pbkdf2_hmac(
-            self.settings.app.PBKDF2_ALGORITHM,
-            random_access_token.encode(),
-            salt.encode(),
-            self.settings.app.PBKDF2_ITERATIONS,
-        )
-
-        refresh_token_hash = hashlib.pbkdf2_hmac(
-            self.settings.app.PBKDF2_ALGORITHM,
-            random_refresh_token.encode(),
-            salt.encode(),
-            self.settings.app.PBKDF2_ITERATIONS,
-        )
+        access_token_hash = self._hash_token(random_access_token, salt)
+        refresh_token_hash = self._hash_token(random_refresh_token, salt)
 
         # Revoke all active sessions for this user before creating a new one
         await self.session_repository.revoke_user_sessions(user_uuid)
 
         session = await self.session_repository.create(
-            access_token=access_token_hash.hex(),
-            refresh_token=refresh_token_hash.hex(),
+            access_token=access_token_hash,
+            refresh_token=refresh_token_hash,
             user_agent=user_agent,
             ip=ip,
             user_uuid=user_uuid,
@@ -149,16 +144,11 @@ class UsersService:
 
             # Generate the refresh token hash to search in the database
             salt = self.settings.app.SESSION_SALT
-            refresh_token_hash = hashlib.pbkdf2_hmac(
-                self.settings.app.PBKDF2_ALGORITHM,
-                random_refresh_token.encode(),
-                salt.encode(),
-                self.settings.app.PBKDF2_ITERATIONS,
-            )
+            refresh_token_hash = self._hash_token(random_refresh_token, salt)
 
             # Fetch the session by refresh token
             session = await self.session_repository.get_by_refresh_token(
-                refresh_token_hash.hex()
+                refresh_token_hash
             )
 
             if not session or str(session["user_uuid"]) != user_uuid:
@@ -167,17 +157,12 @@ class UsersService:
             # Generate a new access token
             random_access_token = secrets.token_hex()
 
-            access_token_hash = hashlib.pbkdf2_hmac(
-                self.settings.app.PBKDF2_ALGORITHM,
-                random_access_token.encode(),
-                salt.encode(),
-                self.settings.app.PBKDF2_ITERATIONS,
-            )
+            access_token_hash = self._hash_token(random_access_token, salt)
 
             # Update only the access token in the existing session
             await self.session_repository.update_access_token(
                 session_uuid=session["uuid"],
-                access_token=access_token_hash.hex(),
+                access_token=access_token_hash,
                 user_agent=user_agent,
                 ip=ip,
             )
@@ -210,16 +195,11 @@ class UsersService:
         """Revokes the current session by user_uuid and access_token"""
         # Hash the access token to match the stored hash
         salt = self.settings.app.SESSION_SALT
-        access_token_hash = hashlib.pbkdf2_hmac(
-            self.settings.app.PBKDF2_ALGORITHM,
-            access_token.encode(),
-            salt.encode(),
-            self.settings.app.PBKDF2_ITERATIONS,
-        )
+        access_token_hash = self._hash_token(access_token, salt)
 
         # Get the session by user_uuid and access_token
         session = await self.session_repository.get_by_user_and_access_token(
-            user_uuid=user_uuid, access_token=access_token_hash.hex()
+            user_uuid=user_uuid, access_token=access_token_hash
         )
 
         if not session:

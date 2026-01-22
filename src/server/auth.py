@@ -1,3 +1,4 @@
+import hmac
 import hashlib
 
 from jwt import PyJWTError, ExpiredSignatureError, decode
@@ -13,6 +14,11 @@ settings = get_settings()
 
 
 class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
+    @staticmethod
+    def _hash_token(token: str, salt: str) -> str:
+        """Hash token using HMAC-SHA256 - fast and secure for random tokens."""
+        return hmac.new(salt.encode(), token.encode(), hashlib.sha256).hexdigest()
+
     async def authenticate_request(
         self, connection: ASGIConnection
     ) -> AuthenticationResult:
@@ -27,12 +33,7 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
                 algorithms=[settings.app.JWT_ALGORITHM],
             )
             salt = settings.app.SESSION_SALT
-            access_token = hashlib.pbkdf2_hmac(
-                settings.app.PBKDF2_ALGORITHM,
-                auth["access_token"].encode(),
-                salt.encode(),
-                settings.app.PBKDF2_ITERATIONS,
-            )
+            access_token = self._hash_token(auth["access_token"], salt)
             user_uuid = auth.get("uuid")
 
             pool = config.asyncpg.provide_pool(connection.scope["app"].state)
@@ -44,7 +45,7 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
                     order by s.created_at desc
                     limit 1
                 """
-                user = await conn.fetchrow(query, user_uuid, access_token.hex())
+                user = await conn.fetchrow(query, user_uuid, access_token)
 
             if not user:
                 raise NotAuthorizedException()

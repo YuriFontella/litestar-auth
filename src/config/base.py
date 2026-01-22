@@ -36,8 +36,6 @@ class AppSettings:
     CSRF_COOKIE_HTTPONLY: bool = True
     JWT_ALGORITHM: str = "HS256"
     SESSION_SALT: Optional[str] = None
-    PBKDF2_ITERATIONS: int = 600_000
-    PBKDF2_ALGORITHM: str = "sha256"
     MAX_FINGERPRINT_VALUE: int = 100_000_000
     BCRYPT_GENSALT: int = 12
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
@@ -46,10 +44,6 @@ class AppSettings:
     def __post_init__(self):
         self.SECRET_KEY = self.SECRET_KEY or os.getenv("SECRET_KEY")
         self.SESSION_SALT = self.SESSION_SALT or os.getenv("SESSION_SALT")
-        self.PBKDF2_ITERATIONS = int(
-            os.getenv("PBKDF2_ITERATIONS", self.PBKDF2_ITERATIONS)
-        )
-        self.PBKDF2_ALGORITHM = os.getenv("PBKDF2_ALGORITHM", self.PBKDF2_ALGORITHM)
         self.MAX_FINGERPRINT_VALUE = int(
             os.getenv("MAX_FINGERPRINT_VALUE", self.MAX_FINGERPRINT_VALUE)
         )
