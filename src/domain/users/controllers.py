@@ -5,7 +5,6 @@ from litestar.di import Provide
 from litestar.channels import ChannelsPlugin
 from litestar.exceptions import HTTPException
 from litestar.params import Parameter
-from litestar.datastructures import Cookie
 
 from src.server.auth import AuthenticationMiddleware
 
@@ -122,29 +121,5 @@ class UserController(Controller):
                 user_uuid=str(current_user["uuid"]), access_token=access_token
             )
 
-        response = Response(
-            content=True,
-            cookies=[
-                Cookie(
-                    key="x-access-token",
-                    value=None,
-                    httponly=True,
-                    secure=False,
-                    samesite="strict",
-                    max_age=0,
-                    expires=0,
-                    path="/",
-                ),
-                Cookie(
-                    key="x-refresh-token",
-                    value=None,
-                    httponly=True,
-                    secure=False,
-                    samesite="strict",
-                    max_age=0,
-                    expires=0,
-                    path="/",
-                ),
-            ],
-        )
+        response = Response(content=True)
         return response
