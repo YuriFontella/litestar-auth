@@ -74,11 +74,18 @@ http://localhost:PORT/schema/redoc
 
 Replace `PORT` with the port used (default 8000 if not specified).
 
-Extra plugin for Poetry
+### 7. Updating dependencies
+
+Install the [poetry-plugin-up](https://github.com/MousaZeidBaker/poetry-plugin-up) plugin to easily upgrade dependencies to their latest versions:
 
 ```bash
 poetry self add poetry-plugin-up
-poetry up --latest
+```
+
+Then run the following command to upgrade all dependencies:
+
+```bash
+poetry up
 ```
 
 ---
